@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
@@ -10,6 +10,14 @@ import { ArrowUpRight, Close, Menu } from "./icons";
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  // Lock background scroll while the full-screen menu is open.
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href.split("#")[0]);
@@ -37,14 +45,15 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <ul className="hidden items-center gap-9 md:flex">
+          <ul className="hidden items-center gap-1 md:flex">
             {navLinks.map((link) => (
               <li key={link.label}>
                 <Link
                   href={link.href}
-                  className={`text-sm transition-colors ${
+                  aria-current={isActive(link.href) ? "page" : undefined}
+                  className={`rounded-lg px-4 py-2 text-sm transition-colors ${
                     isActive(link.href)
-                      ? "text-white"
+                      ? "border border-white/10 bg-white/5 text-white"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -75,33 +84,50 @@ export function Navbar() {
           </button>
         </nav>
 
-        {/* Mobile menu */}
+        {/* Mobile menu — full screen */}
         {open && (
-          <div className="border-t border-white/5 bg-[#0d0d0d] px-5 pb-6 pt-2 md:hidden">
-            <ul className="flex flex-col">
-              {navLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={`block rounded-lg px-3 py-3 text-base transition-colors ${
-                      isActive(link.href)
-                        ? "text-white"
-                        : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
+          <div className="menu-overlay fixed inset-0 z-50 flex flex-col bg-[#0d0d0d] md:hidden">
+            {/* Top bar with logo + close */}
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/5 px-5">
+              <Link href="/" aria-label="FutureTech home" onClick={() => setOpen(false)}>
+                <Logo />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="inline-flex h-10 w-10 items-center justify-center text-zinc-200"
+              >
+                <Close className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Items */}
+            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-5 py-8">
+              {navLinks.map((link, i) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  style={{ animationDelay: `${i * 70}ms` }}
+                  className={`menu-item border-b border-white/5 py-5 text-2xl font-semibold transition-colors ${
+                    isActive(link.href)
+                      ? "text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {link.label}
+                </Link>
               ))}
-            </ul>
-            <Link
-              href="/contact"
-              onClick={() => setOpen(false)}
-              className="mt-3 block rounded-md bg-brand px-5 py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-brand-soft"
-            >
-              Contact Us
-            </Link>
+              <Link
+                href="/contact"
+                onClick={() => setOpen(false)}
+                style={{ animationDelay: `${navLinks.length * 70}ms` }}
+                className="menu-item mt-6 rounded-md bg-brand px-5 py-4 text-center text-base font-semibold text-black transition-colors hover:bg-brand-soft"
+              >
+                Contact Us
+              </Link>
+            </nav>
           </div>
         )}
       </header>

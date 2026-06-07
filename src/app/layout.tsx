@@ -28,9 +28,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        {/* Load every page at the top — disable the browser's scroll restoration on refresh. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('scrollRestoration' in history){history.scrollRestoration='manual';}",
+          }}
+        />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

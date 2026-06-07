@@ -33,12 +33,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // FormSubmit expects a browser-style Origin/Referer; forward the site's.
+  const origin = request.headers.get("origin") ?? "http://localhost:3000";
+
   try {
     const res = await fetch(`https://formsubmit.co/ajax/${RECIPIENT}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        Origin: origin,
+        Referer: `${origin}/contact`,
       },
       body: JSON.stringify({
         _subject: `New FutureTech contact from ${firstName} ${lastName}`.trim(),
@@ -50,9 +55,19 @@ export async function POST(request: Request) {
       }),
     });
 
-    if (!res.ok) {
+    const result = (await res.json().catch(() => ({}))) as {
+      success?: string;
+      message?: string;
+    };
+
+    // FormSubmit returns HTTP 200 even on failure — the real status is in `success`.
+    if (!res.ok || result.success !== "true") {
       return NextResponse.json(
-        { error: "The mail service rejected the request. Please try again." },
+        {
+          error:
+            result.message ??
+            "The mail service rejected the request. Please try again.",
+        },
         { status: 502 },
       );
     }
